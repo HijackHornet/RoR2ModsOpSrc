@@ -354,7 +354,7 @@
       <Private>false</Private>
     </Reference>
     <Reference Include="Wwise">
-      <HintPath>..\libs\Wwise.dll</HintPath>
+      <HintPath>..\..\libs\Wwise.dll</HintPath>
       <Private>false</Private>
     </Reference>
     <Reference Include="Zio">
@@ -380,8 +380,10 @@
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </None>
   </ItemGroup>
-
   <Target Name="PostBuild" AfterTargets="PostBuildEvent" Condition="'$(Configuration)' == 'Release' ">
-    <Exec Command="dotfuscatorCLI.exe Dotfuscator.xml&#xD;&#xA;powershell Compress-Archive -Path '$(TargetDir)\Dotfuscated\$(TargetFileName)', '$(ProjectDir)icon.png', '$(ProjectDir)manifest.json', '$(ProjectDir)README.md', '$(ProjectDir)Newtonsoft.Json.dll' -DestinationPath '$(ProjectDir)\$(ProjectName).zip' -Force" />
+    <Exec Command="powershell Compress-Archive -Path '$(TargetDir)\$(TargetFileName)', '$(ProjectDir)icon.png', '$(ProjectDir)manifest.json', '$(ProjectDir)README.md', '$(ProjectDir)Newtonsoft.Json.dll' -DestinationPath '$(ProjectDir)\$(ProjectName).zip' -Force" />
   </Target>
+  <!--Target Name="PostBuild" AfterTargets="PostBuildEvent" Condition="'$(Configuration)' == 'Release' ">
+    <Exec Command="dotfuscatorCLI.exe Dotfuscator.xml&#xD;&#xA;powershell Compress-Archive -Path '$(TargetDir)\Dotfuscated\$(TargetFileName)', '$(ProjectDir)icon.png', '$(ProjectDir)manifest.json', '$(ProjectDir)README.md', '$(ProjectDir)Newtonsoft.Json.dll' -DestinationPath '$(ProjectDir)\$(ProjectName).zip' -Force" />
+  </Target-->
 </Project>
