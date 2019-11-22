@@ -10,11 +10,12 @@
     using System.IO.Compression;
     using System.Linq;
     using System.Reflection;
+    using System.Runtime.CompilerServices;
     using UnityEngine;
     using UnityEngine.Networking;
     using J = Newtonsoft.Json.JsonPropertyAttribute;
 
-    [BepInPlugin("com.hijackhornet.modautoupdaterapi", "HjUpdaterAPI", "1.0.0")]
+    [BepInPlugin("com.hijackhornet.hjupdaterapi", "HjUpdaterAPI", "1.0.4")]
     public class HjUpdaterAPI : BaseUnityPlugin
     {
         #region Constants
@@ -46,9 +47,10 @@
 
         #region Methods
 
-        public static void RegisterForUpdate(string packageName, System.Version currentVersion, string assemblyFileLocation, byte flag = 1, List<string> otherFilesLocationRelativeToTheDll = null, bool modUseRuntimeRessourceLoading = false)
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        public static void RegisterForUpdate(string packageName, System.Version currentVersion, byte flag = 1, List<string> otherFilesLocationRelativeToTheDll = null, bool modUseRuntimeRessourceLoading = false)
         {
-            modRegisteredQueue.Enqueue(new ModUpdateRequest(packageName, currentVersion, assemblyFileLocation, flag, otherFilesLocationRelativeToTheDll, modUseRuntimeRessourceLoading));
+            modRegisteredQueue.Enqueue(new ModUpdateRequest(packageName, currentVersion, Assembly.GetCallingAssembly().Location, flag, otherFilesLocationRelativeToTheDll, modUseRuntimeRessourceLoading));
         }
 
         private void Awake()
@@ -63,7 +65,7 @@
             List<string> filesPath = new List<string>();
             filesPath.Add("Newtonsoft.Json.dll");
 
-            RegisterForUpdate("HjUpdaterAPI", MetadataHelper.GetMetadata(this).Version, Assembly.GetExecutingAssembly().Location, UpdateAlways, filesPath);
+            RegisterForUpdate("HjUpdaterAPI", MetadataHelper.GetMetadata(this).Version, UpdateAlways, filesPath);
             PerformAwake();
         }
 
@@ -95,9 +97,9 @@
 
         internal void Start()
         {
-            if ((modRegisteredQueue.Count > 0) && this.enabled && ConfigWrapperBlockUpdates.Value)
+            if ((modRegisteredQueue.Count > 0) && this.enabled && !ConfigWrapperBlockUpdates.Value)
             {
-                Debug.Log(LOG + "Checkink updates for " + modRegisteredQueue.Count + " mod(s)...");
+                Debug.Log(LOG + "Checking updates for " + modRegisteredQueue.Count + " mod(s)...");
                 StartCoroutine(GetPackagesAndLaunchQueueProcess());
             }
         }
@@ -382,9 +384,12 @@
                 get => _otherFilesLocationRelativeToTheDll;
                 set
                 {
-                    if (!value.Contains("README.md")) { value.Add("README.md"); }
-                    if (!value.Contains("manifest.json")) { value.Add("manifest.json"); }
-                    if (!value.Contains("icon.png")) { value.Add("icon.png"); }
+                    if (value != null)
+                    {
+                        if (!value.Contains("README.md")) { value.Add("README.md"); }
+                        if (!value.Contains("manifest.json")) { value.Add("manifest.json"); }
+                        if (!value.Contains("icon.png")) { value.Add("icon.png"); }
+                    }
                     _otherFilesLocationRelativeToTheDll = value;
                 }
             }

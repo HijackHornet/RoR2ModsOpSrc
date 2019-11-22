@@ -353,10 +353,6 @@
       <HintPath>..\libs\UnityEngine.XRModule.dll</HintPath>
       <Private>false</Private>
     </Reference>
-    <Reference Include="Wwise">
-      <HintPath>..\..\libs\Wwise.dll</HintPath>
-      <Private>false</Private>
-    </Reference>
     <Reference Include="Zio">
       <HintPath>..\libs\Zio.dll</HintPath>
       <Private>false</Private>

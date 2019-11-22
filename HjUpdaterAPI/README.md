@@ -37,7 +37,6 @@ void Awake(){
 HjUpdaterAPI.RegisterForUpdate(  
 	string packageName,  
 	System.Version currentVersion,  
-	string assemblyFileLocation,  
 	[byte flag],  
 	[List<string> otherFilesLocationRelativeToTheDll],  
 	[bool modUseRuntimeRessourceLoading]
@@ -48,7 +47,6 @@ Let's go through each parameter
 Mandatory parameters  
 - packageName - The name of your mod inside the manifest.json name  
 - currentVersion - The version of your mod. Can bet fetch using `MetadataHelper.GetMetadata(this).Version`  
-- assemblyFileLocation - This is a runtime absolute value. This HAS TO BE `Assembly.GetExecutingAssembly().Location`
 
 Optional parameters
 
@@ -74,8 +72,7 @@ That's it ! Your mod is now able to self-update at runtime when newer versions a
 void Awake(){  
 RegisterForUpdate(  
 	"MyModNameAsInTheManifest",  
-	MetadataHelper.GetMetadata(this).Version,  
-	Assembly.GetExecutingAssembly().Location  
+	MetadataHelper.GetMetadata(this).Version
 	);  
 //...your other function calls  
 }  
@@ -87,8 +84,7 @@ List<string> files = new List<string>();
 files.Add('mySecondDll.dll');  
 RegisterForUpdate(  
 	"MyModNameAsInTheManifest",  
-	MetadataHelper.GetMetadata(this).Version,  
-	Assembly.GetExecutingAssembly().Location,  
+	MetadataHelper.GetMetadata(this).Version,    
 	HjUpdaterAPI.WarnOnly  
 );  
 //...your other function calls  
@@ -102,8 +98,7 @@ List<string> files = new List<string>();
 files.Add('mySecondDll.dll');  
 RegisterForUpdate(  
 	"MyModNameAsInTheManifest",  
-	MetadataHelper.GetMetadata(this).Version,  
-	Assembly.GetExecutingAssembly().Location,  
+	MetadataHelper.GetMetadata(this).Version,   
 	HjUpdaterAPI.UpdateIfSameDependencyOnlyElseWarnOnly  
 	files  
 );  
@@ -119,8 +114,7 @@ files.Add('/font/myFont.ttf');
 files.Add('/sounds/mySoundBank.bnk');  
 RegisterForUpdate(  
 	"MyModNameAsInTheManifest",  
-	MetadataHelper.GetMetadata(this).Version,  
-	Assembly.GetExecutingAssembly().Location,  
+	MetadataHelper.GetMetadata(this).Version,  	
 	HjUpdaterAPI.UpdateIfSameDependencyOnlyElseWarnOnly,  
 	files,  
 	true  
@@ -132,6 +126,8 @@ RegisterForUpdate(
   
 ## Versions  
 - 1.0.0 - Initial release
+- 1.0.3 - Removing the neccesity to give the assembly path
+- 1.0.4 - Fixing a small bug on the file location
 
 ## Contact  
 I'm available on the ROR2 Official discord server (@Hijack Hornet).
