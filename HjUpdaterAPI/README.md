@@ -5,6 +5,9 @@ This 'mod' is actually an API for developers willing to implement an auto-update
 
 ## How does it work ?  
 I won't enter the details but BepInEx loads all of your mods into your RAM when you start the game. That means that **while still playing, modification to the mods files are possible** without impacting your gameplay experience. For mods that require runtime access to files resources (assets, sandbanks,etc.)., Hj will wait for you to close the game before deploying the changes.  
+
+## How much time is needed to add it to my mod ?
+About 5 minutes for one dll mods, maybe 10 for complex mods with multiple non embed ressources. The docs seems hard but just add the dependency and copypast one of the case study if you don't want to enter into the details.
 ## Is it safe to use ?  
 **Yes**. Every update is logged, and every old mod version is kept into a **Backup** folder under `BepInEx/plugin/HijackHornet-HjUpdaterAPI/Backup`. Also, Hj create an interface between mods and the folder structure in which they exist. So **no matter if a user put the dll file into the root of /plugin or into a folder inside another folder** named pepeDontLikeToFeel : the mod will still update and keep this folder structure.
 
@@ -12,8 +15,8 @@ I won't enter the details but BepInEx loads all of your mods into your RAM when 
 As a user, you can install this mod by unzipping the archive into the plugin folder. Don't forget to add **BOTH** dll next to each other.  
 However, this mod won't do anything if the other mods you are using aren't compatible with it. Some mods might put Hj as a dependency, forcing you to install it, while others might only suggest you install it because they made their mod compatible.  
 ### Config  
-At the moment, the only config available to you is the emergency turn of parameters. For example, if a mod has been updated automatically but the update is broken and you would like to use the backup files (previous version), you should change this parameter to true,  
-Just go to /BepInEx/config/hjupdaterapi.config and change the value from false to true.
+If a mod has been updated automatically but the update is broken and you would like to use the backup files (previous version), you should change values in the config file as you please.
+Just go to /BepInEx/config/hjupdaterapi.config and change things according to your preferences. You can even choose to overwriter modders decisions over what type of update should be performed.
 
 ## Developer Guide  
 As a modder, you can use Hj function to add an update behaviour for your mod. It's very simple to do and should provide enough flexibility to work with basically any mod. Here is how to setup Hj into your mods. It also ensures that if your mod end up being deprecated, it will be automatically deactivated on users’ computers.
@@ -23,7 +26,40 @@ As a modder, you can use Hj function to add an update behaviour for your mod. It
 In Visual Studio (or whatever IDE you use) add both dll included in the mod download link into your library folder, and add a reference to them into your project settings.
 
 ### Adding the dependency  
-You can choose to HjUpdaterAPI as a dependency so that you are assured that everyone using it will get the latest version or at least be informed that a new version is available. However you can also choose to add it has an optional dependency and check in the awake function if the mod is installed and if so perform the command call.  
+You can choose to HjUpdaterAPI as a dependency so that you are assured that everyone using it will get the latest version or at least be informed that a new version is available. However you can also choose to add it has an optional dependency and check in the awake function if the mod is installed and if so perform the command call.
+To add it as required dependency (recommanded) :
+```json
+//manifest.json
+{
+    "name": "MyModName",
+    "version_number": "1.2.1",
+    "website_url": "myWebSite",
+    "description": "Restart a run with a simple key !",
+    "dependencies": [
+        "bbepis-BepInExPack-3.0.0",
+		"HijackHornet-HjUpdaterAPI-1.1.0" <--- Add this !
+    ]
+}
+```
+```cs
+//Your mod class
+
+[BepInDependency(HjUpdaterAPI.GUID)] //Add this
+```
+No need to update the dependency version when HjUpdaterApi will be updated.
+
+To add it as an optional dependency, just add put a if statement arround the static function like this :
+```cs
+ if (BepInEx.Bootstrap.Chainloader.PluginInfos.ContainsKey(HjUpdater.GUID)){
+                
+        RegisterForUpdate(  
+                "MyModName",  
+                MetadataHelper.GetMetadata(this).Version
+        );  
+
+}
+```
+
 ### Using the namespace  
 First add the namespace usage at the beginning of your mods main class.  
 ```c  
@@ -37,7 +73,7 @@ void Awake(){
 HjUpdaterAPI.RegisterForUpdate(  
 	string packageName,  
 	System.Version currentVersion,  
-	[byte flag],  
+	[enum flag],  
 	[List<string> otherFilesLocationRelativeToTheDll],  
 	[bool modUseRuntimeRessourceLoading]
 	);  
@@ -46,16 +82,16 @@ HjUpdaterAPI.RegisterForUpdate(
 Let's go through each parameter  
 Mandatory parameters  
 - packageName - The name of your mod inside the manifest.json name  
-- currentVersion - The version of your mod. Can bet fetch using `MetadataHelper.GetMetadata(this).Version`  
+- currentVersion - The version of your mod. Can bet fetch using `MetadataHelper.GetMetadata(this).Version`, but don't forget to update this number in both the manifest.json and in the main class bepinEx plugin declaration.
 
 Optional parameters
 
 - flag - This is used to specify the behaviour of the update. Options are :  
-HjUpdaterAPI.**UpdateAlways**  
-HjUpdaterAPI.**UpdateIfSameDependencyOnlyElseWarnOnly**  
-HjUpdaterAPI.**UpdateIfSameDependencyOnlyElseWarnAndDeactivate**  
-HjUpdaterAPI.**WarnOnly**  
-HjUpdaterAPI.**WarnAndDeactivate**
+HjUpdaterAPI.Flag.**UpdateAlways**  
+HjUpdaterAPI.Flag.**UpdateIfSameDependencyOnlyElseWarnOnly**  
+HjUpdaterAPI.Flag.**UpdateIfSameDependencyOnlyElseWarnAndDeactivate**  
+HjUpdaterAPI.Flag.**WarnOnly**  
+HjUpdaterAPI.Flag.**WarnAndDeactivate**
 
 By default, **UpdateIfSameDependencyOnlyElseWarnOnly** is used.  
 **DO NOT** use UpdateAlways except if you know what you are doing. It could be useful for instance if you know that the next dependency update will not break your mod, but it's risky and could end up breaking your mod.
@@ -85,7 +121,7 @@ files.Add('mySecondDll.dll');
 RegisterForUpdate(  
 	"MyModNameAsInTheManifest",  
 	MetadataHelper.GetMetadata(this).Version,    
-	HjUpdaterAPI.WarnOnly  
+	HjUpdaterAPI.Flag.WarnOnly  
 );  
 //...your other function calls  
 }  
@@ -99,7 +135,7 @@ files.Add('mySecondDll.dll');
 RegisterForUpdate(  
 	"MyModNameAsInTheManifest",  
 	MetadataHelper.GetMetadata(this).Version,   
-	HjUpdaterAPI.UpdateIfSameDependencyOnlyElseWarnOnly  
+	HjUpdaterAPI.Flag.UpdateIfSameDependencyOnlyElseWarnOnly  
 	files  
 );  
 //...your other function calls  
@@ -115,7 +151,7 @@ files.Add('/sounds/mySoundBank.bnk');
 RegisterForUpdate(  
 	"MyModNameAsInTheManifest",  
 	MetadataHelper.GetMetadata(this).Version,  	
-	HjUpdaterAPI.UpdateIfSameDependencyOnlyElseWarnOnly,  
+	HjUpdaterAPI.Flag.UpdateIfSameDependencyOnlyElseWarnOnly,  
 	files,  
 	true  
 	);  
@@ -128,7 +164,10 @@ RegisterForUpdate(
 - 1.0.0 - Initial release
 - 1.0.3 - Removing the neccesity to give the assembly path
 - 1.0.4 - Fixing a small bug on the file location
-
+- 1.0.5 - Fixing critical issue introduced in the process of making the all thing easier to use...
+- 1.0.6 - Add some documentation for adding this as an optional dependency.
+- 1.1.0 - Add config for users to choose what type of options not to perform & switching to an enum for flags (non breaking, byte still work until 1.2.0)
+- 1.1.1 - Change the package GUID from static to const on peoples advice
 ## Contact  
 I'm available on the ROR2 Official discord server (@Hijack Hornet).
 
