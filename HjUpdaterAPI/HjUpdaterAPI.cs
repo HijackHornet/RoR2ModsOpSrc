@@ -6,6 +6,7 @@
     using System;
     using System.Collections;
     using System.Collections.Generic;
+    using System.Diagnostics;
     using System.IO;
     using System.IO.Compression;
     using System.Linq;
@@ -13,6 +14,7 @@
     using System.Runtime.CompilerServices;
     using UnityEngine;
     using UnityEngine.Networking;
+    using Debug = UnityEngine.Debug;
     using J = Newtonsoft.Json.JsonPropertyAttribute;
 
     public static class Serialize
@@ -24,7 +26,7 @@
         #endregion Methods
     }
 
-    [BepInPlugin(GUID, "HjUpdaterAPI", "1.1.1")]
+    [BepInPlugin(GUID, "HjUpdaterAPI", "1.2.0")]
     public class HjUpdaterAPI : BaseUnityPlugin
     {
         #region Constants
@@ -39,7 +41,7 @@
 
         #region Fields
 
-        //Depreacted --------- Will be removed in 1.2.0
+        //Depreacted --------- Will be removed in 1.3.0
 
         public static byte UpdateAlways = 0;
         public static byte UpdateIfSameDependencyOnlyElseWarnOnly = 1;
@@ -75,13 +77,24 @@
         #region Methods
 
         [MethodImpl(MethodImplOptions.NoInlining)]
+        public static void Register(string packageName, Flag flag = Flag.UpdateIfSameDependencyOnlyElseWarnOnly, List<string> otherFilesLocationRelativeToTheDll = null, bool modUseRuntimeRessourceLoading = false)
+        {
+            StackFrame frame = new StackFrame(1);
+            modRegisteredQueue.Enqueue(new ModUpdateRequest(packageName, MetadataHelper.GetMetadata(frame.GetMethod().DeclaringType).Version, Assembly.GetCallingAssembly().Location, ReturnFlagAccordingToConfig(flag), otherFilesLocationRelativeToTheDll, modUseRuntimeRessourceLoading));
+        }
+
+        //Will be removed in 1.3.0
+        [Obsolete("Deprecated methode. Use Register instead")]
+        [MethodImpl(MethodImplOptions.NoInlining)]
         public static void RegisterForUpdate(string packageName, System.Version currentVersion, Flag flag = Flag.UpdateIfSameDependencyOnlyElseWarnOnly, List<string> otherFilesLocationRelativeToTheDll = null, bool modUseRuntimeRessourceLoading = false)
         {
+            StackFrame frame = new StackFrame(1);
+            Debug.LogWarning(MetadataHelper.GetMetadata(frame.GetMethod().DeclaringType).Version);
             modRegisteredQueue.Enqueue(new ModUpdateRequest(packageName, currentVersion, Assembly.GetCallingAssembly().Location, ReturnFlagAccordingToConfig(flag), otherFilesLocationRelativeToTheDll, modUseRuntimeRessourceLoading));
         }
 
-        //Deprecated overload. Use Flag type instead of bytes.
-        //Will be removed in 1.2.0
+        //Will be removed in 1.3.0
+        [Obsolete("Deprecated methode. Use Register instead")]
         [MethodImpl(MethodImplOptions.NoInlining)]
         public static void RegisterForUpdate(string packageName, System.Version currentVersion, byte flag = 1, List<string> otherFilesLocationRelativeToTheDll = null, bool modUseRuntimeRessourceLoading = false)
         {
@@ -153,7 +166,7 @@
             List<string> filesPath = new List<string>();
             filesPath.Add("Newtonsoft.Json.dll");
 
-            RegisterForUpdate("HjUpdaterAPI", MetadataHelper.GetMetadata(this).Version, UpdateAlways, filesPath);
+            Register("HjUpdaterAPI", Flag.UpdateAlways, filesPath);
             PerformAwake();
         }
 

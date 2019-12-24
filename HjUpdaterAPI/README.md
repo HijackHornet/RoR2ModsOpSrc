@@ -1,4 +1,4 @@
-﻿![](https://lh3.googleusercontent.com/8pxcLPj9w-mzVGApS19ZoY1ECpWDiDsQ1gqF7ph8_-n9pEPsTWQBQ208FXVAwGffITcQgkqhSJzOYN0k2LUGi1D6MflZYFEIKvSej2pyOXX67xXDCPGn17dZqhO01KCxptZfO-5Awr6Uja-VtIpqGXMFweme5UJLjmRLzUz_xqoJTQVw3zUBwjDmmY4LO-lfuLBaH738Gc6L0IBFlf2iUeLjFYYRn5vuf-LPm4oXoTLKxROc27R4TlKVS9zZdduLK9oO044bR_KJgidLq8cL-oxKFJcDV9hDFx9-AZjhn3X7ggslq1SX-O1XJohij6Fq8KlxJDF8kXW-JQKHETblH6mmgStqjIHosNlXUmuGykHDEdQTvQjJtZFyUUGbo9oeATbhlz5NdNzT6H2Sf3sUL7mrn694CyTID7iVEakOx9xZiymyEDm3zoaGX0-U53WxFcYZd6tONZw_EGhUGSWzn2tMjNDCQB_PEWmYQS756r4Ga60_jzNXgjALVkCi2sXjuorz8Z7xhwti_OwuLPXeyEsjlTzPpZ_YR6WHQetyZVep8QOd8zAo79Z3uiy-4kP6NBPFIV5EwMjT4RQysdRFdNv2NraqN1Jdx8s4zBMXwHYE3HYVyyQ68312e6o87eWYHYrNx5VH5IkaOZRjkFO5AuFiq-IO-6VYUvZdek9lkq2BR52OVqm0SE4=w1024-h300-no)
+﻿![](https://lh3.googleusercontent.com/hjo0Yb1G9TjN4JqOF8dgpX58sbM2moS5v_oQk60-ofW5nsQ1O9pWQBkZ056eizTsUhtgqTvpOCiZNSj-qzM5e6IhoY4yQH5gSja0Alu8ShD8HYGDmt9Wn61mdT1hAUOj6k33coFPgxRATz7PhNHuUAHBiV5julkfvOYO7VZOeiiY-w2tglXJcKYmOEvYuTEN2Zg9SOj53CHghOU9fsA40PIaNA5KUp79TOZGJuM4VvFgc1eB8L8XkITVR0Hl3NQG2xB2liRILyrnirQ7drhUgk2A9kLOoV_JHFEr9G0xi8yQ0rNSbB0556otMEC4cpRtkgSWz8wtBthBW7RLvU1_zTswThhQcZ-0J8hnMYYd_wN2FCMbRZRK77pZYti-15TTjhNyEvLtOrjgjVNHKeGEH9RaLcNii1VhF7fevk11o0qhJeCrgjtV8u9Up6iLe-3xB4U6UIBS7Vr8SvkpkWLxr7R3kIjP-p9Z1a4r7H8sfZjU6MRkZeS7x1cAeNFO4FUivyapyFbfx_qJ0JJASKvc6d7VbOsEY2jLwNLIDX7ZBzsBhZTZiyAz5GX75s1T0YQnMfssnsYUPqKVyLx8T2c6eb63Op1WO13xjTKb-D7XiExwD5ujgS8jM9o1JwKWcE2k_JLYvABK96tlgHVn3u0TmJsTATMfcP7XdDcD2MxvG6H-_YfqJiNTlrB4Cv931GNLKkLPnf9gMI4YJ-wmW3G6TDKMFp-EFcfSp7_Som9o8RwX8um8=w1024-h300-no)
 
 # Hj Updater API  
 This 'mod' is actually an API for developers willing to implement an auto-update feature for their mod in only one function call. As a user of the mod, every other mod using Hj Updater API will be updated automatically while you are playing. As a developer, many options are available for you to decide how the update should behave. If you only want to warn the mod user that an update is available, Hj will provide you an easy way to do so.
@@ -20,7 +20,7 @@ Just go to /BepInEx/config/hjupdaterapi.config and change things according to yo
 
 ## Developer Guide  
 As a modder, you can use Hj function to add an update behaviour for your mod. It's very simple to do and should provide enough flexibility to work with basically any mod. Here is how to setup Hj into your mods. It also ensures that if your mod end up being deprecated, it will be automatically deactivated on users’ computers.
-
+I'm available to help you getting it setup, just pm me on the modded discord : @Hijack Hornet.
   
 ### Adding the dll into your project lib folder  
 In Visual Studio (or whatever IDE you use) add both dll included in the mod download link into your library folder, and add a reference to them into your project settings.
@@ -37,7 +37,7 @@ To add it as required dependency (recommanded) :
     "description": "Restart a run with a simple key !",
     "dependencies": [
         "bbepis-BepInExPack-3.0.0",
-		"HijackHornet-HjUpdaterAPI-1.1.0" <--- Add this !
+		"HijackHornet-HjUpdaterAPI-1.2.0" <--- Add this !
     ]
 }
 ```
@@ -52,10 +52,7 @@ To add it as an optional dependency, just add put a if statement arround the sta
 ```cs
  if (BepInEx.Bootstrap.Chainloader.PluginInfos.ContainsKey(HjUpdater.GUID)){
                 
-        RegisterForUpdate(  
-                "MyModName",  
-                MetadataHelper.GetMetadata(this).Version
-        );  
+        Register("MyModName");  
 
 }
 ```
@@ -70,9 +67,8 @@ Now go into your awake function (it has to be put into Awake and not into Start)
 
 ```c
 void Awake(){  
-HjUpdaterAPI.RegisterForUpdate(  
+HjUpdaterAPI.Register(  
 	string packageName,  
-	System.Version currentVersion,  
 	[enum flag],  
 	[List<string> otherFilesLocationRelativeToTheDll],  
 	[bool modUseRuntimeRessourceLoading]
@@ -82,7 +78,6 @@ HjUpdaterAPI.RegisterForUpdate(
 Let's go through each parameter  
 Mandatory parameters  
 - packageName - The name of your mod inside the manifest.json name  
-- currentVersion - The version of your mod. Can bet fetch using `MetadataHelper.GetMetadata(this).Version`, but don't forget to update this number in both the manifest.json and in the main class bepinEx plugin declaration.
 
 Optional parameters
 
@@ -106,10 +101,7 @@ That's it ! Your mod is now able to self-update at runtime when newer versions a
 #### A simple dll mod with no other files  
 ```c  
 void Awake(){  
-RegisterForUpdate(  
-	"MyModNameAsInTheManifest",  
-	MetadataHelper.GetMetadata(this).Version
-	);  
+	Register("MyModNameAsInTheManifest");  
 //...your other function calls  
 }  
 ```  
@@ -118,9 +110,8 @@ RegisterForUpdate(
 void Awake(){  
 List<string> files = new List<string>();  
 files.Add('mySecondDll.dll');  
-RegisterForUpdate(  
-	"MyModNameAsInTheManifest",  
-	MetadataHelper.GetMetadata(this).Version,    
+Register(  
+	"MyModNameAsInTheManifest",
 	HjUpdaterAPI.Flag.WarnOnly  
 );  
 //...your other function calls  
@@ -132,10 +123,9 @@ RegisterForUpdate(
 void Awake(){  
 List<string> files = new List<string>();  
 files.Add('mySecondDll.dll');  
-RegisterForUpdate(  
+Register(  
 	"MyModNameAsInTheManifest",  
-	MetadataHelper.GetMetadata(this).Version,   
-	HjUpdaterAPI.Flag.UpdateIfSameDependencyOnlyElseWarnOnly  
+	HjUpdaterAPI.Flag.UpdateIfSameDependencyOnlyElseWarnOnly,  
 	files  
 );  
 //...your other function calls  
@@ -148,9 +138,8 @@ List<string> files = new List<string>();
 files.Add('/asset/myAssetPack.asset');  
 files.Add('/font/myFont.ttf');  
 files.Add('/sounds/mySoundBank.bnk');  
-RegisterForUpdate(  
+Register(  
 	"MyModNameAsInTheManifest",  
-	MetadataHelper.GetMetadata(this).Version,  	
 	HjUpdaterAPI.Flag.UpdateIfSameDependencyOnlyElseWarnOnly,  
 	files,  
 	true  
@@ -168,8 +157,9 @@ RegisterForUpdate(
 - 1.0.6 - Add some documentation for adding this as an optional dependency.
 - 1.1.0 - Add config for users to choose what type of options not to perform & switching to an enum for flags (non breaking, byte still work until 1.2.0)
 - 1.1.1 - Change the package GUID from static to const on peoples advice
+- 1.2.0 - Depracate RegisterUpdate, use Register instead (simpler usage);
 ## Contact  
 I'm available on the ROR2 Official discord server (@Hijack Hornet).
 
 ## Thanks  
-And thanks to @Bepis for explaining to me how he made BepInEx. That really helped me find how to make this API possible. Thanks to @Rein too for its encouragement in this project.
+And thanks to @Bepis for explaining to me how he made BepInEx. That really helped me find how to make this API possible.
