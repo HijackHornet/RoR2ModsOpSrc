@@ -31,11 +31,11 @@
         public const string
             NAME = "HjUpdaterAPI",
             GUID = "com.hijackhornet." + NAME,
-            VERSION = "1.3.0";
+            VERSION = "1.3.1";
 
         #region Constants
 
-        internal const string BASEAPIURL = "beta.thunderstore.io/api/v1";
+        internal const string BASEAPIURL = "thunderstore.io/api/v1";
         private const string BACKUPFOLDER = "BackupMods";
         private const string LOG = "[HjUpdaterAPI] ";
         private const string MODFOLDERCONTAINER = "HijackHornet-HjUpdaterAPI";
@@ -83,45 +83,6 @@
         {
             StackFrame frame = new StackFrame(1);
             modRegisteredQueue.Enqueue(new ModUpdateRequest(packageName, MetadataHelper.GetMetadata(frame.GetMethod().DeclaringType).Version, Assembly.GetCallingAssembly().Location, ReturnFlagAccordingToConfig(flag), otherFilesLocationRelativeToTheDll, modUseRuntimeRessourceLoading));
-        }
-
-        //Will be removed in 1.3.0
-        [Obsolete("Deprecated methode. Use Register instead")]
-        [MethodImpl(MethodImplOptions.NoInlining)]
-        public static void RegisterForUpdate(string packageName, System.Version currentVersion, Flag flag = Flag.UpdateIfSameDependencyOnlyElseWarnOnly, List<string> otherFilesLocationRelativeToTheDll = null, bool modUseRuntimeRessourceLoading = false)
-        {
-            StackFrame frame = new StackFrame(1);
-            Debug.LogWarning(MetadataHelper.GetMetadata(frame.GetMethod().DeclaringType).Version);
-            modRegisteredQueue.Enqueue(new ModUpdateRequest(packageName, currentVersion, Assembly.GetCallingAssembly().Location, ReturnFlagAccordingToConfig(flag), otherFilesLocationRelativeToTheDll, modUseRuntimeRessourceLoading));
-        }
-
-        //Will be removed in 1.3.0
-        [Obsolete("Deprecated methode. Use Register instead")]
-        [MethodImpl(MethodImplOptions.NoInlining)]
-        public static void RegisterForUpdate(string packageName, System.Version currentVersion, byte flag = 1, List<string> otherFilesLocationRelativeToTheDll = null, bool modUseRuntimeRessourceLoading = false)
-        {
-            Flag flagEnum;
-            if (flag == 0)
-            {
-                flagEnum = Flag.UpdateAlways;
-            }
-            else if (flag == 2)
-            {
-                flagEnum = Flag.UpdateIfSameDependencyOnlyElseWarnAndDeactivate;
-            }
-            else if (flag == 3)
-            {
-                flagEnum = Flag.WarnOnly;
-            }
-            else if (flag == 4)
-            {
-                flagEnum = Flag.WarnAndDeactivate;
-            }
-            else
-            {
-                flagEnum = Flag.UpdateIfSameDependencyOnlyElseWarnOnly;
-            }
-            modRegisteredQueue.Enqueue(new ModUpdateRequest(packageName, currentVersion, Assembly.GetCallingAssembly().Location, ReturnFlagAccordingToConfig(flagEnum), otherFilesLocationRelativeToTheDll, modUseRuntimeRessourceLoading));
         }
 
         internal IEnumerator GetPackagesAndLaunchQueueProcess()
@@ -342,6 +303,7 @@
             Register("HjUpdaterAPI", Flag.UpdateAlways, filesPath);
             PerformAwake();
         }
+
         private bool ByteArrayToFile(string fileName, byte[] byteArray)
         {
             try

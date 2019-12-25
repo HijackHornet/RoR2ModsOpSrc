@@ -1,6 +1,7 @@
 ﻿![](https://lh3.googleusercontent.com/hjo0Yb1G9TjN4JqOF8dgpX58sbM2moS5v_oQk60-ofW5nsQ1O9pWQBkZ056eizTsUhtgqTvpOCiZNSj-qzM5e6IhoY4yQH5gSja0Alu8ShD8HYGDmt9Wn61mdT1hAUOj6k33coFPgxRATz7PhNHuUAHBiV5julkfvOYO7VZOeiiY-w2tglXJcKYmOEvYuTEN2Zg9SOj53CHghOU9fsA40PIaNA5KUp79TOZGJuM4VvFgc1eB8L8XkITVR0Hl3NQG2xB2liRILyrnirQ7drhUgk2A9kLOoV_JHFEr9G0xi8yQ0rNSbB0556otMEC4cpRtkgSWz8wtBthBW7RLvU1_zTswThhQcZ-0J8hnMYYd_wN2FCMbRZRK77pZYti-15TTjhNyEvLtOrjgjVNHKeGEH9RaLcNii1VhF7fevk11o0qhJeCrgjtV8u9Up6iLe-3xB4U6UIBS7Vr8SvkpkWLxr7R3kIjP-p9Z1a4r7H8sfZjU6MRkZeS7x1cAeNFO4FUivyapyFbfx_qJ0JJASKvc6d7VbOsEY2jLwNLIDX7ZBzsBhZTZiyAz5GX75s1T0YQnMfssnsYUPqKVyLx8T2c6eb63Op1WO13xjTKb-D7XiExwD5ujgS8jM9o1JwKWcE2k_JLYvABK96tlgHVn3u0TmJsTATMfcP7XdDcD2MxvG6H-_YfqJiNTlrB4Cv931GNLKkLPnf9gMI4YJ-wmW3G6TDKMFp-EFcfSp7_Som9o8RwX8um8=w1024-h300-no)
 
 # Hj Updater API  
+This tool has been made by HijackHornet and is now reworked and mantain by me under an MIT license.
 This 'mod' is actually an API for developers willing to implement an auto-update feature for their mod in only one function call. As a user of the mod, every other mod using Hj Updater API will be updated automatically while you are playing. As a developer, many options are available for you to decide how the update should behave. If you only want to warn the mod user that an update is available, Hj will provide you an easy way to do so.
 
 ## How does it work ?  
@@ -48,7 +49,7 @@ To add it as required dependency (recommanded) :
 ```
 No need to update the dependency version when HjUpdaterApi will be updated.
 
-To add it as an optional dependency, just add put a if statement arround the static function like this :
+To add it as an optional dependency, just put a if statement arround the static function like this :
 ```cs
  if (BepInEx.Bootstrap.Chainloader.PluginInfos.ContainsKey(HjUpdater.GUID)){
                 
@@ -158,8 +159,9 @@ Register(
 - 1.1.0 - Add config for users to choose what type of options not to perform & switching to an enum for flags (non breaking, byte still work until 1.2.0)
 - 1.1.1 - Change the package GUID from static to const on peoples advice
 - 1.2.0 - Depracate RegisterUpdate, use Register instead (simpler usage);
+- 1.3.0 - Reworked by Lodington, end of support by HijackHornet.
 ## Contact  
-I'm available on the ROR2 Official discord server (@Hijack Hornet).
+I'm available on the ROR2 Official discord server (@Lodington).
 
 ## Thanks  
-And thanks to @Bepis for explaining to me how he made BepInEx. That really helped me find how to make this API possible.
+Thanks to HijackHornet for making the base of this and letting me take it back after he left the modding community.
