@@ -44,15 +44,6 @@
 
         #region Fields
 
-        //Depreacted --------- Will be removed in 1.3.0
-
-        public static byte UpdateAlways = 0;
-        public static byte UpdateIfSameDependencyOnlyElseWarnAndDeactivate = 2;
-        public static byte UpdateIfSameDependencyOnlyElseWarnOnly = 1;
-        public static byte WarnAndDeactivate = 4;
-        public static byte WarnOnly = 3;
-        //---------------------
-
         private static Queue<ModUpdateRequest> modRegisteredForLateUpdateQueue = new Queue<ModUpdateRequest>();
         private static Queue<ModUpdateRequest> modRegisteredQueue = new Queue<ModUpdateRequest>();
         private Package[] packages;
@@ -67,16 +58,73 @@
             WarnAndDeactivate
         };
 
-        public static ConfigWrapper<bool> ConfigDeactivateDeactivateonUpdate { get; set; }
-        public static ConfigWrapper<bool> ConfigDeactivateThis { get; set; }
-        public static ConfigWrapper<bool> ConfigDeactivateUpdateAlways { get; set; }
-        public static ConfigWrapper<bool> ConfigDeactivateUpdateIfSameDependencies { get; set; }
-        public static ConfigWrapper<bool> ConfigDeactivateUpdateIfSameDependenciesElseDeactivate { get; set; }
-        public static ConfigWrapper<bool> ConfigPerformDepreactedCheckAndRemove { get; set; }
+        public static ConfigEntry<bool> ConfigDeactivateDeactivateonUpdate { get; set; }
+        public static ConfigEntry<bool> ConfigDeactivateThis { get; set; }
+        public static ConfigEntry<bool> ConfigDeactivateUpdateAlways { get; set; }
+        public static ConfigEntry<bool> ConfigDeactivateUpdateIfSameDependencies { get; set; }
+        public static ConfigEntry<bool> ConfigDeactivateUpdateIfSameDependenciesElseDeactivate { get; set; }
+        public static ConfigEntry<bool> ConfigPerformDepreactedCheckAndRemove { get; set; }
 
         #endregion Fields
 
         #region Methods
+
+        private void Awake()
+        {
+            //Config base
+            ConfigDeactivateThis = Config.Bind<bool>(
+                "config",
+                "deactivate_completly",
+                false,
+                "Change this to true if you want to deactivate all kinds of update check."
+                );
+            ConfigPerformDepreactedCheckAndRemove = Config.Bind<bool>(
+                "config",
+                "deprecated_check",
+                true,
+                "Choose if you want deprecated (not working) mods to be deactivate if detected"
+                );
+            //Overwrites configs
+            ConfigDeactivateUpdateAlways = Config.Bind<bool>(
+                "Overwrite",
+                "overwrite_update_always",
+                false,
+                "If true, all mods flaged as 'update always' will be replaced by warn only"
+            );
+            ConfigDeactivateUpdateIfSameDependencies = Config.Bind<bool>(
+                "Overwrite",
+                "overwrite_update_type_update_if_same_dependencies",
+                false,
+                "If true, all mods flaged as 'update if same dependencies else warn only' will be replaced by warn only"
+            );
+            ConfigDeactivateUpdateIfSameDependenciesElseDeactivate = Config.Bind<bool>(
+                 "Overwrite",
+                 "overwrite_update_type_update_if_same_dependencies_else_deactivate",
+                 false,
+                 "If true, all mods flaged as 'update if same dependencies else deactivate' will be replaced by warn only"
+            );
+            ConfigDeactivateDeactivateonUpdate = Config.Bind<bool>(
+                "Overwrite",
+                "overwrite_warn_and_deactivate",
+                false,
+                "If true, all mods flaged as 'warn and deactivate on update found' will be replaced by warn only"
+            );
+
+            List<string> filesPath = new List<string>();
+            filesPath.Add("Newtonsoft.Json.dll");
+
+            Register("HjUpdaterAPI", Flag.UpdateAlways, filesPath);
+            PerformAwake();
+        }
+
+        internal void Start()
+        {
+            if ((modRegisteredQueue.Count > 0) && this.enabled && !ConfigDeactivateThis.Value)
+            {
+                Debug.Log(LOG + "Checking updates for " + modRegisteredQueue.Count + " mod(s)...");
+                StartCoroutine(GetPackagesAndLaunchQueueProcess());
+            }
+        }
 
         [MethodImpl(MethodImplOptions.NoInlining)]
         public static void Register(string packageName, Flag flag = Flag.UpdateIfSameDependencyOnlyElseWarnOnly, List<string> otherFilesLocationRelativeToTheDll = null, bool modUseRuntimeRessourceLoading = false)
@@ -248,60 +296,6 @@
             {
                 return flag;
             }
-        }
-
-        private void Awake()
-        {
-            //Config base
-            ConfigDeactivateThis = Config.Wrap(
-                "config",
-                "deactivate_completly",
-
-                "Change this to true if you want to deactivate all kinds of update check.",
-                false
-                );
-            ConfigPerformDepreactedCheckAndRemove = Config.Wrap<bool>(
-                "config",
-                "deprecated_check",
-
-                "Choose if you want deprecated (not working) mods to be deactivate if detected",
-                true
-                );
-            //Overwrites configs
-            ConfigDeactivateUpdateAlways = Config.Wrap(
-                "Overwrite",
-                "overwrite_update_always",
-
-                "If true, all mods flaged as 'update always' will be replaced by warn only",
-                false
-            );
-            ConfigDeactivateUpdateIfSameDependencies = Config.Wrap(
-                "Overwrite",
-                "overwrite_update_type_update_if_same_dependencies",
-
-                "If true, all mods flaged as 'update if same dependencies else warn only' will be replaced by warn only",
-                false
-            );
-            ConfigDeactivateUpdateIfSameDependenciesElseDeactivate = Config.Wrap(
-                 "Overwrite",
-                 "overwrite_update_type_update_if_same_dependencies_else_deactivate",
-
-                 "If true, all mods flaged as 'update if same dependencies else deactivate' will be replaced by warn only",
-                 false
-            );
-            ConfigDeactivateDeactivateonUpdate = Config.Wrap(
-                "Overwrite",
-                "overwrite_warn_and_deactivate",
-
-                "If true, all mods flaged as 'warn and deactivate on update found' will be replaced by warn only",
-                false
-            );
-
-            List<string> filesPath = new List<string>();
-            filesPath.Add("Newtonsoft.Json.dll");
-
-            Register("HjUpdaterAPI", Flag.UpdateAlways, filesPath);
-            PerformAwake();
         }
 
         private bool ByteArrayToFile(string fileName, byte[] byteArray)
