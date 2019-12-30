@@ -48,8 +48,8 @@
         private static Queue<ModUpdateRequest> modRegisteredQueue = new Queue<ModUpdateRequest>();
         private Package[] packages;
         private string workingDirectory;
-        private List<ModUpdateLog> oldModUpdateLogs; //Local file at startup
-        private List<ModUpdateLog> newModUpdateLogs; //What should replace the local file at game closure
+        private List<ModUpdateLog> oldModUpdateLogs = new List<ModUpdateLog>(); //Local file at startup
+        private List<ModUpdateLog> newModUpdateLogs = new List<ModUpdateLog>(); //What should replace the local file at game closure
 
         public enum Flag
         {
@@ -501,17 +501,34 @@
         //Parse the local file into List<ModUpdateLog> oldModUpdateLogs;
         private void readModUpdateLogFile()
         {
-            //TODO
-            //NB : File location is Path.Combine(workingDirectory, BACKUPFOLDER,"updateLog.json") or txt doesnt matter
-            // Handle errors inside this method
+            var updateFileLocation = Path.Combine(workingDirectory, BACKUPFOLDER, "updateLog.json");
+            if (File.Exists(updateFileLocation))
+            {
+                string jsonModUpdateLog = File.ReadAllText(updateFileLocation);
+                try
+                {
+                    oldModUpdateLogs = JsonConvert.DeserializeObject<List<ModUpdateLog>>(jsonModUpdateLog, Converter.Settings);
+                }
+                catch (Exception)
+                {
+                    Debug.Log(LOG + "ModUpdateLog contains incorrect formatting");
+                }
+            }
         }
 
         //Parse List<ModUpdateLog> newModUpdateLogs; and write it to the local file (overide)
         private void writeModUpdateLogFile()
         {
-            //TODO
-            //NB : File location is Path.Combine(workingDirectory, BACKUPFOLDER,"updateLog.json") or txt doesnt matter
-            // Handle errors inside this method
+            var updateFileLocation = Path.Combine(workingDirectory, BACKUPFOLDER, "updateLog.json");
+            string newJson = JsonConvert.SerializeObject(newModUpdateLogs, Converter.Settings);
+            try
+            {
+                File.WriteAllText(updateFileLocation, newJson);
+            }
+            catch (Exception)
+            {
+                Debug.Log(LOG + "Json file couldn't be written to");
+            }
         }
 
         #endregion Methods
