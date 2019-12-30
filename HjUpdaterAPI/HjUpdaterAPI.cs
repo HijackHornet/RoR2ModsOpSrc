@@ -48,6 +48,8 @@
         private static Queue<ModUpdateRequest> modRegisteredQueue = new Queue<ModUpdateRequest>();
         private Package[] packages;
         private string workingDirectory;
+        private List<ModUpdateLog> oldModUpdateLogs; //Local file at startup
+        private List<ModUpdateLog> newModUpdateLogs; //What should replace the local file at game closure
 
         public enum Flag
         {
@@ -121,6 +123,7 @@
         {
             if ((modRegisteredQueue.Count > 0) && this.enabled && !ConfigDeactivateThis.Value)
             {
+                readModUpdateLogFile();
                 Debug.Log(LOG + "Checking updates for " + modRegisteredQueue.Count + " mod(s)...");
                 StartCoroutine(GetPackagesAndLaunchQueueProcess());
             }
@@ -177,51 +180,61 @@
             }
             else if (modUpdateRequest.currentVersion < pk.Versions[0].VersionNumber)
             {
-                if (modUpdateRequest.flag.Equals(Flag.UpdateAlways))
-                {
-                    yield return PerformUpdate(modUpdateRequest, pk);
-                }
-                else if (modUpdateRequest.flag.Equals(Flag.UpdateIfSameDependencyOnlyElseWarnOnly))
-                {
-                    bool sameDependencies;
-                    try { sameDependencies = EqualsDependecy(pk, modUpdateRequest.currentVersion); }
-                    catch { yield break; }
+                ModUpdateLog mul = new ModUpdateLog(modUpdateRequest.packageName, modUpdateRequest.currentVersion, pk.Versions[0].VersionNumber);
 
-                    if (!sameDependencies)
-                    {
-                        Debug.LogWarning(LOG + "An update for " + modUpdateRequest.packageName + " is available. Current version(" + modUpdateRequest.currentVersion.ToString() + "). Newest version (" + pk.Versions[0].VersionNumber.ToString() + ")."
-                        + System.Environment.NewLine + "However, the newest version uses a different dependency version. This mod specifie not to update automaticly in that case. Please go to " + pk.PackageUrl + " and update manually.");
-                    }
-                    else
+                if (checkIfSimilarUpdateAlreadyProceed(mul))
+                {
+                    Debug.LogWarning(LOG + "Similar update already proceed last time. Maybe the modder forgot to change the version number ?");
+                }
+                else
+                {
+                    if (modUpdateRequest.flag.Equals(Flag.UpdateAlways))
                     {
                         yield return PerformUpdate(modUpdateRequest, pk);
                     }
-                }
-                else if (modUpdateRequest.flag.Equals(Flag.UpdateIfSameDependencyOnlyElseWarnAndDeactivate))
-                {
-                    if (EqualsDependecy(pk, modUpdateRequest.currentVersion))
+                    else if (modUpdateRequest.flag.Equals(Flag.UpdateIfSameDependencyOnlyElseWarnOnly))
                     {
-                        yield return PerformUpdate(modUpdateRequest, pk);
+                        bool sameDependencies;
+                        try { sameDependencies = EqualsDependecy(pk, modUpdateRequest.currentVersion); }
+                        catch { yield break; }
+
+                        if (!sameDependencies)
+                        {
+                            Debug.LogWarning(LOG + "An update for " + modUpdateRequest.packageName + " is available. Current version(" + modUpdateRequest.currentVersion.ToString() + "). Newest version (" + pk.Versions[0].VersionNumber.ToString() + ")."
+                            + System.Environment.NewLine + "However, the newest version uses a different dependency version. This mod specifie not to update automaticly in that case. Please go to " + pk.PackageUrl + " and update manually.");
+                        }
+                        else
+                        {
+                            yield return PerformUpdate(modUpdateRequest, pk);
+                        }
                     }
-                    else
+                    else if (modUpdateRequest.flag.Equals(Flag.UpdateIfSameDependencyOnlyElseWarnAndDeactivate))
+                    {
+                        if (EqualsDependecy(pk, modUpdateRequest.currentVersion))
+                        {
+                            yield return PerformUpdate(modUpdateRequest, pk);
+                        }
+                        else
+                        {
+                            Debug.LogWarning(LOG + "An update for " + modUpdateRequest.packageName + " is available. Current version(" + modUpdateRequest.currentVersion.ToString() + "). Newest version (" + pk.Versions[0].VersionNumber.ToString() + ")."
+                           + System.Environment.NewLine + "However, the newest version uses a different dependency version. This mod specifie not to update automaticly in that case and to deactivate the mod at the next game start. Please go to " + pk.PackageUrl + " and update manually.");
+
+                            DeactivateMod(modUpdateRequest);
+                        }
+                    }
+                    else if (modUpdateRequest.flag.Equals(Flag.WarnOnly))
                     {
                         Debug.LogWarning(LOG + "An update for " + modUpdateRequest.packageName + " is available. Current version(" + modUpdateRequest.currentVersion.ToString() + "). Newest version (" + pk.Versions[0].VersionNumber.ToString() + ")."
-                       + System.Environment.NewLine + "However, the newest version uses a different dependency version. This mod specifie not to update automaticly in that case and to deactivate the mod at the next game start. Please go to " + pk.PackageUrl + " and update manually.");
-
+                            + System.Environment.NewLine + "This mod specifie not to update automaticly. Please go to " + pk.PackageUrl + " and update manually.");
+                    }
+                    else if (modUpdateRequest.flag.Equals(Flag.WarnAndDeactivate))
+                    {
+                        Debug.LogWarning(LOG + "An update for " + modUpdateRequest.packageName + " is available. Current version(" + modUpdateRequest.currentVersion.ToString() + "). Newest version (" + pk.Versions[0].VersionNumber.ToString() + ")."
+                            + System.Environment.NewLine + "This mod specifie to deactivate the mod when you will close the game. Please go to " + pk.PackageUrl + " and reinstall manually.");
                         DeactivateMod(modUpdateRequest);
                     }
                 }
-                else if (modUpdateRequest.flag.Equals(Flag.WarnOnly))
-                {
-                    Debug.LogWarning(LOG + "An update for " + modUpdateRequest.packageName + " is available. Current version(" + modUpdateRequest.currentVersion.ToString() + "). Newest version (" + pk.Versions[0].VersionNumber.ToString() + ")."
-                        + System.Environment.NewLine + "This mod specifie not to update automaticly. Please go to " + pk.PackageUrl + " and update manually.");
-                }
-                else if (modUpdateRequest.flag.Equals(Flag.WarnAndDeactivate))
-                {
-                    Debug.LogWarning(LOG + "An update for " + modUpdateRequest.packageName + " is available. Current version(" + modUpdateRequest.currentVersion.ToString() + "). Newest version (" + pk.Versions[0].VersionNumber.ToString() + ")."
-                        + System.Environment.NewLine + "This mod specifie to deactivate the mod when you will close the game. Please go to " + pk.PackageUrl + " and reinstall manually.");
-                    DeactivateMod(modUpdateRequest);
-                }
+                logModUpdate(mul);
             }
             else if (pk.IsDeprecated)
             {
@@ -234,15 +247,6 @@
             else
             {
                 Debug.Log(LOG + "The package (mod) named '" + modUpdateRequest.packageName + "' (" + modUpdateRequest.currentVersion.ToString() + ") is up to date.");
-            }
-        }
-
-        internal void Start()
-        {
-            if ((modRegisteredQueue.Count > 0) && this.enabled && !ConfigDeactivateThis.Value)
-            {
-                Debug.Log(LOG + "Checking updates for " + modRegisteredQueue.Count + " mod(s)...");
-                StartCoroutine(GetPackagesAndLaunchQueueProcess());
             }
         }
 
@@ -363,6 +367,16 @@
             ZipFile.ExtractToDirectory(modZipFilePath, Directory.GetParent(modUpdateRequest.currentDllFileLocation).FullName);
         }
 
+        private void logModUpdate(ModUpdateLog modUpdateLog)
+        {
+            newModUpdateLogs.Add(modUpdateLog);
+        }
+
+        private bool checkIfSimilarUpdateAlreadyProceed(ModUpdateLog modUpdateLog)
+        {
+            return oldModUpdateLogs.Contains<ModUpdateLog>(modUpdateLog);
+        }
+
         private bool EqualsDependecy(Package pk, System.Version version)
         {
             for (int i = 0; i < pk.Versions.Length; i++)
@@ -413,6 +427,7 @@
             {
                 Debug.Log(LOG + "Starting late mod update deployement.");
                 PerformLateUpdates();
+                writeModUpdateLogFile();
             }
         }
 
@@ -483,6 +498,22 @@
             }
         }
 
+        //Parse the local file into List<ModUpdateLog> oldModUpdateLogs;
+        private void readModUpdateLogFile()
+        {
+            //TODO
+            //NB : File location is Path.Combine(workingDirectory, BACKUPFOLDER,"updateLog.json") or txt doesnt matter
+            // Handle errors inside this method
+        }
+
+        //Parse List<ModUpdateLog> newModUpdateLogs; and write it to the local file (overide)
+        private void writeModUpdateLogFile()
+        {
+            //TODO
+            //NB : File location is Path.Combine(workingDirectory, BACKUPFOLDER,"updateLog.json") or txt doesnt matter
+            // Handle errors inside this method
+        }
+
         #endregion Methods
 
         internal class ModUpdateRequest
@@ -539,6 +570,20 @@
             }
 
             #endregion Constructors
+        }
+
+        internal class ModUpdateLog
+        {
+            public string packageName { get; set; }
+            public System.Version lastVersion { get; set; }
+            public System.Version newVersion { get; set; }
+
+            public ModUpdateLog(string packageName, System.Version lastVersion, System.Version newVersion)
+            {
+                this.packageName = packageName;
+                this.lastVersion = lastVersion;
+                this.newVersion = newVersion;
+            }
         }
     }
 
