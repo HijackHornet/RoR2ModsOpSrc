@@ -129,6 +129,16 @@
             }
         }
 
+        private void OnDestroy()
+        {
+            if ((modRegisteredForLateUpdateQueue.Count > 0) && this.enabled)
+            {
+                Debug.Log(LOG + "Starting late mod update deployement.");
+                PerformLateUpdates();
+            }
+            writeModUpdateLogFile();
+        }
+
         [MethodImpl(MethodImplOptions.NoInlining)]
         public static void Register(string packageName, Flag flag = Flag.UpdateIfSameDependencyOnlyElseWarnOnly, List<string> otherFilesLocationRelativeToTheDll = null, bool modUseRuntimeRessourceLoading = false)
         {
@@ -163,6 +173,7 @@
                         yield return ProcessQueueElement(modRegisteredQueue.Dequeue());
                     }
                     Debug.Log(LOG + "All registered mod have been checked for newer versions. This update process is now complete.");
+                    writeModUpdateLogFile();
                 }
             }
         }
@@ -323,6 +334,8 @@
         {
             if (modUpdateRequest.modUseRuntimeRessourceLoading)
             {
+                /*This is badly coded, but it was a shortcute i took. Basically if a mod is late update, we add it to another queue and
+                 remove the flag so that we we use the perform update on the second queue at game closure, it doesnt block here again*/
                 modUpdateRequest.modUseRuntimeRessourceLoading = false;
                 modRegisteredForLateUpdateQueue.Enqueue(modUpdateRequest);
                 return 2;
@@ -421,16 +434,6 @@
             throw new Exception("");
         }
 
-        private void OnDestroy()
-        {
-            if ((modRegisteredForLateUpdateQueue.Count > 0) && this.enabled)
-            {
-                Debug.Log(LOG + "Starting late mod update deployement.");
-                PerformLateUpdates();
-                writeModUpdateLogFile();
-            }
-        }
-
         private void PerformAwake()
         {
             workingDirectory = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
@@ -462,6 +465,7 @@
             while (modRegisteredForLateUpdateQueue.Count > 0)
             {
                 ModUpdateRequest modUpdateRequest = modRegisteredForLateUpdateQueue.Dequeue();
+                DeactivateMod(modUpdateRequest);
                 DeployModUpdate(modUpdateRequest, Path.Combine(Path.GetTempPath(), modUpdateRequest.packageName + ".zip"));
             }
         }
@@ -509,9 +513,10 @@
                 {
                     oldModUpdateLogs = JsonConvert.DeserializeObject<List<ModUpdateLog>>(jsonModUpdateLog, Converter.Settings);
                 }
-                catch (Exception)
+                catch (Exception e)
                 {
-                    Debug.Log(LOG + "ModUpdateLog contains incorrect formatting");
+                    Debug.Log(LOG + "ModUpdateLog contains incorrect formatting. Error :" + e);
+                    File.Delete(updateFileLocation);
                 }
             }
         }
@@ -525,9 +530,9 @@
             {
                 File.WriteAllText(updateFileLocation, newJson);
             }
-            catch (Exception)
+            catch (Exception e)
             {
-                Debug.Log(LOG + "Json file couldn't be written to");
+                Debug.Log(LOG + "Json file couldn't be written. Error :" + e);
             }
         }
 
