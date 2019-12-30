@@ -336,13 +336,12 @@
                     File.Move(modUpdateRequest.currentDllFileLocation, Path.Combine(backupFolder.FullName, Path.GetFileName(modUpdateRequest.currentDllFileLocation) + ".old"));
                     foreach (string fileLocation in modUpdateRequest.otherFilesLocationRelativeToTheDll)
                     {
-                        Debug.Log(fileLocation);
                         if (File.Exists(Path.Combine(path, fileLocation)))
                         {
                             Debug.Log(Path.Combine(path, fileLocation));
                             if (fileLocation.Contains(".."))
                             {
-                                throw new Exception("One or multiple files used as ressource by the mod is in a parent folder to its assembly (dll). At the moment, Hj-UpdaterAPI isnt able to perform this type of update. Please make the update manually and contact this mod owner so that (s)he know (s)he uses Hj-UpdaterAPI outside of its defined limitations.");
+                                throw new Exception("One or multiple files used as ressource by the mod is in a parent folder to its assembly (dll). Hj-UpdaterAPI isnt able (for security reasons) to perform this type of update. Please make the update manually and contact this mod owner so that (s)he know (s)he uses Hj-UpdaterAPI outside of its defined limitations.");
                             }
                             Directory.Move(Path.Combine(path, fileLocation), Path.Combine(backupFolder.FullName, fileLocation + ".old"));
                         }

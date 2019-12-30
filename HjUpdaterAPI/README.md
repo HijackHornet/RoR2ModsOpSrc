@@ -12,7 +12,7 @@ About 5 minutes for one dll mods, maybe 10 for complex mods with multiple non em
 ## Is it safe to use ?  
 **Depends**. Every update is logged, and every old mod version is kept into a **Backup** folder under `BepInEx/plugin/HijackHornet-HjUpdaterAPI/Backup`. 
 Also, Hj create an interface between mods and the folder structure in which they exist. So **no matter if a user put the dll file into the root of /plugin or into a folder inside another folder** named pepeDontLikeToFeel : the mod will still update and keep this folder structure.
-**However** this can become an issue if modders start implementing malware in their mods or exploit the api to delete other mods files. Don't worry tho as the api won't let any mod change any files outside of the RoR2 folder. For futher details, see [here](https://github.com/HijackHornet/RoR2ModsOpSrc/issues/4).
+**However** this can become an issue if modders start implementing malware in their mods or exploit the api to delete other mods files. Don't worry tho as the api won't let any mod change any files outside of the RoR2 mod folder. For futher details, see [here](https://github.com/HijackHornet/RoR2ModsOpSrc/issues/4).
 
 ## User Guide  
 As a user, you can install this mod by unzipping the archive into the plugin folder. Don't forget to add **BOTH** dll next to each other.  
