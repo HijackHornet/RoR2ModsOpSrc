@@ -2,8 +2,6 @@
 {
     using BepInEx;
     using BepInEx.Configuration;
-    using global::HjUpdaterAPI;
-    using Newtonsoft.Json;
     using System;
     using System.Collections;
     using System.Collections.Generic;
@@ -26,21 +24,17 @@
 
         #region Constants
 
-        internal const string BASEAPIURL = "thunderstore.io/api/v1";
-        private const string BACKUPFOLDER = "BackupMods";
-        private const string LOG = "[HjUpdaterAPI] ";
-        private const string MODFOLDERCONTAINER = "HijackHornet-HjUpdaterAPI";
+        internal const string BACKUPFOLDER = "BackupMods";
+        internal const string LOG = "[HjUpdaterAPI] ";
+        internal const string MODFOLDERCONTAINER = "HijackHornet-HjUpdaterAPI";
 
         #endregion Constants
 
         #region Fields
 
+        internal static string workingDirectory;
         private static Queue<ModUpdateRequest> modRegisteredForLateUpdateQueue = new Queue<ModUpdateRequest>();
         private static Queue<ModUpdateRequest> modRegisteredQueue = new Queue<ModUpdateRequest>();
-        private Package[] packages;
-        private string workingDirectory;
-        private List<ModUpdateLog> oldModUpdateLogs = new List<ModUpdateLog>(); //Local file at startup
-        private List<ModUpdateLog> newModUpdateLogs = new List<ModUpdateLog>(); //What should replace the local file at game closure
 
         public enum Flag
         {
@@ -114,7 +108,7 @@
         {
             if ((modRegisteredQueue.Count > 0) && this.enabled && !ConfigDeactivateThis.Value)
             {
-                readModUpdateLogFile();
+                ModUpdateLog.readModUpdateLogFile();
                 Debug.Log(LOG + "Checking updates for " + modRegisteredQueue.Count + " mod(s)...");
                 StartCoroutine(GetPackagesAndLaunchQueueProcess());
             }
@@ -127,7 +121,7 @@
                 Debug.Log(LOG + "Starting late mod update deployement.");
                 PerformLateUpdates();
             }
-            writeModUpdateLogFile();
+            ModUpdateLog.writeModUpdateLogFile();
         }
 
         [MethodImpl(MethodImplOptions.NoInlining)]
@@ -139,7 +133,7 @@
 
         internal IEnumerator GetPackagesAndLaunchQueueProcess()
         {
-            UnityWebRequest webRequest = UnityWebRequest.Get(BASEAPIURL + "/package");
+            UnityWebRequest webRequest = UnityWebRequest.Get(ThunderAPI.BASEAPIURL + "/package");
             webRequest.SetRequestHeader("accept", "application/json");
             yield return webRequest.SendWebRequest();
             if (webRequest.isNetworkError)
@@ -149,8 +143,8 @@
             }
             else
             {
-                this.packages = Package.FromJson(webRequest.downloadHandler.text);
-                if (this.packages.Length <= 0)
+                Package.packages = Package.FromJson(webRequest.downloadHandler.text);
+                if (Package.packages.Length <= 0)
                 {
                     Debug.LogError(LOG + "Package list seems empty. Please try to restart the game. If the error persist check out this mod page for details and contact infos.");
                     yield break;
@@ -164,7 +158,7 @@
                         yield return ProcessQueueElement(modRegisteredQueue.Dequeue());
                     }
                     Debug.Log(LOG + "All registered mod have been checked for newer versions. This update process is now complete.");
-                    writeModUpdateLogFile();
+                    ModUpdateLog.writeModUpdateLogFile();
                 }
             }
         }
@@ -172,7 +166,7 @@
         internal IEnumerator ProcessQueueElement(ModUpdateRequest modUpdateRequest)
         {
             Package pk;
-            try { pk = GetPackage(modUpdateRequest.packageName); }
+            try { pk = Package.GetPackage(modUpdateRequest.packageName); }
             catch { yield break; }
 
             if ((pk.Versions == null) || pk.Versions.Length <= 0)
@@ -184,7 +178,7 @@
             {
                 ModUpdateLog mul = new ModUpdateLog(modUpdateRequest.packageName, modUpdateRequest.currentVersion, pk.Versions[0].VersionNumber);
 
-                if (checkIfSimilarUpdateAlreadyProceed(mul))
+                if (ModUpdateLog.checkIfSimilarUpdateAlreadyProceed(mul))
                 {
                     Debug.LogWarning(LOG + "Similar update already proceed last time. Maybe the modder forgot to change the version number ?");
                 }
@@ -197,7 +191,7 @@
                     else if (modUpdateRequest.flag.Equals(Flag.UpdateIfSameDependencyOnlyElseWarnOnly))
                     {
                         bool sameDependencies;
-                        try { sameDependencies = EqualsDependecy(pk, modUpdateRequest.currentVersion); }
+                        try { sameDependencies = Package.EqualsDependecy(pk, modUpdateRequest.currentVersion); }
                         catch { yield break; }
 
                         if (!sameDependencies)
@@ -212,7 +206,7 @@
                     }
                     else if (modUpdateRequest.flag.Equals(Flag.UpdateIfSameDependencyOnlyElseWarnAndDeactivate))
                     {
-                        if (EqualsDependecy(pk, modUpdateRequest.currentVersion))
+                        if (Package.EqualsDependecy(pk, modUpdateRequest.currentVersion))
                         {
                             yield return PerformUpdate(modUpdateRequest, pk);
                         }
@@ -236,7 +230,7 @@
                         DeactivateMod(modUpdateRequest);
                     }
                 }
-                logModUpdate(mul);
+                ModUpdateLog.logModUpdate(mul);
             }
             else if (pk.IsDeprecated)
             {
@@ -371,60 +365,6 @@
             ZipFile.ExtractToDirectory(modZipFilePath, Directory.GetParent(modUpdateRequest.currentDllFileLocation).FullName);
         }
 
-        private void logModUpdate(ModUpdateLog modUpdateLog)
-        {
-            newModUpdateLogs.Add(modUpdateLog);
-        }
-
-        private bool checkIfSimilarUpdateAlreadyProceed(ModUpdateLog modUpdateLog)
-        {
-            return oldModUpdateLogs.Contains<ModUpdateLog>(modUpdateLog);
-        }
-
-        private bool EqualsDependecy(Package pk, System.Version version)
-        {
-            for (int i = 0; i < pk.Versions.Length; i++)
-            {
-                if (pk.Versions[i].VersionNumber == version)
-                {
-                    string[] a = pk.Versions[i].Dependencies.Where<string>(x => { return !x.Contains("HjUpdaterAPI"); }).OrderBy(y => y).ToArray();
-                    string[] b = pk.Versions[0].Dependencies.Where<string>(x => { return !x.Contains("HjUpdaterAPI"); }).OrderBy(y => y).ToArray();
-
-                    if (a.Length == b.Length)
-                    {
-                        bool eq = true;
-                        for (int j = 0; j < a.Length; j++)
-                        {
-                            if (a[j] != b[j])
-                            {
-                                eq = false;
-                            }
-                        }
-                        return eq;
-                    }
-                    else
-                    {
-                        return false;
-                    }
-                }
-            }
-            Debug.LogError("Unable to find the dependencies for that mod version. Please contact the modder of that mod that you encountered this issue.");
-            throw new Exception("");
-        }
-
-        private Package GetPackage(string modName)
-        {
-            for (int i = 0; i < packages.Length; i++)
-            {
-                if (packages[i].Name == modName)
-                {
-                    return packages[i];
-                }
-            }
-            Debug.LogWarning(LOG + "Couldnt find a package named '" + modName + "' in the package list. Update check will not be performed for that mod.");
-            throw new Exception("");
-        }
-
         private void PerformAwake()
         {
             workingDirectory = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
@@ -490,40 +430,6 @@
                         Debug.Log(LOG + "This mod use some files on runtime. This means that the mod will be updated automaticly when you will exit the game.");
                     }
                 }
-            }
-        }
-
-        //Parse the local file into List<ModUpdateLog> oldModUpdateLogs;
-        private void readModUpdateLogFile()
-        {
-            var updateFileLocation = Path.Combine(workingDirectory, BACKUPFOLDER, "updateLog.json");
-            if (File.Exists(updateFileLocation))
-            {
-                string jsonModUpdateLog = File.ReadAllText(updateFileLocation);
-                try
-                {
-                    oldModUpdateLogs = JsonConvert.DeserializeObject<List<ModUpdateLog>>(jsonModUpdateLog, Converter.Settings);
-                }
-                catch (Exception e)
-                {
-                    Debug.Log(LOG + "ModUpdateLog contains incorrect formatting. Error :" + e);
-                    File.Delete(updateFileLocation);
-                }
-            }
-        }
-
-        //Parse List<ModUpdateLog> newModUpdateLogs; and write it to the local file (overide)
-        private void writeModUpdateLogFile()
-        {
-            var updateFileLocation = Path.Combine(workingDirectory, BACKUPFOLDER, "updateLog.json");
-            string newJson = JsonConvert.SerializeObject(newModUpdateLogs, Converter.Settings);
-            try
-            {
-                File.WriteAllText(updateFileLocation, newJson);
-            }
-            catch (Exception e)
-            {
-                Debug.Log(LOG + "Json file couldn't be written. Error :" + e);
             }
         }
 
