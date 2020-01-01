@@ -2,6 +2,7 @@
 {
     using BepInEx;
     using BepInEx.Configuration;
+    using global::HjUpdaterAPI;
     using Newtonsoft.Json;
     using System;
     using System.Collections;
@@ -14,16 +15,6 @@
     using System.Runtime.CompilerServices;
     using UnityEngine.Networking;
     using Debug = UnityEngine.Debug;
-    using J = Newtonsoft.Json.JsonPropertyAttribute;
-
-    public static class Serialize
-    {
-        #region Methods
-
-        public static string ToJson(this Package[] self) => JsonConvert.SerializeObject(self, Converter.Settings);
-
-        #endregion Methods
-    }
 
     [BepInPlugin(GUID, NAME, VERSION)]
     public class HjUpdaterAPI : BaseUnityPlugin
@@ -537,164 +528,5 @@
         }
 
         #endregion Methods
-
-        internal class ModUpdateRequest
-        {
-            #region Fields
-
-            private List<string> _otherFilesLocationRelativeToTheDll = null;
-
-            #endregion Fields
-
-            #region Properties
-
-            public string currentDllFileLocation { get; set; }
-            public System.Version currentVersion { get; set; }
-            public Flag flag { get; set; }
-            public bool modUseRuntimeRessourceLoading { get; set; }
-
-            public List<string> otherFilesLocationRelativeToTheDll
-            {
-                get => _otherFilesLocationRelativeToTheDll;
-                set
-                {
-                    if (value == null)
-                    {
-                        _otherFilesLocationRelativeToTheDll = new List<string>();
-                        _otherFilesLocationRelativeToTheDll.Add("README.md");
-                        _otherFilesLocationRelativeToTheDll.Add("manifest.json");
-                        _otherFilesLocationRelativeToTheDll.Add("icon.png");
-                    }
-                    else
-                    {
-                        if (!value.Contains("README.md")) { value.Add("README.md"); }
-                        if (!value.Contains("manifest.json")) { value.Add("manifest.json"); }
-                        if (!value.Contains("icon.png")) { value.Add("icon.png"); }
-                        _otherFilesLocationRelativeToTheDll = value;
-                    }
-                }
-            }
-
-            public string packageName { get; set; }
-
-            #endregion Properties
-
-            #region Constructors
-
-            public ModUpdateRequest(string packageName, System.Version currentVersion, string currentDllFileLocation, Flag flag, List<string> otherFilesLocationRelativeToTheDll, bool modUseRuntimeRessourceLoading)
-            {
-                this.packageName = packageName;
-                this.currentVersion = currentVersion;
-                this.currentDllFileLocation = currentDllFileLocation;
-                this.otherFilesLocationRelativeToTheDll = otherFilesLocationRelativeToTheDll;
-                this.flag = flag;
-                this.modUseRuntimeRessourceLoading = modUseRuntimeRessourceLoading;
-            }
-
-            #endregion Constructors
-        }
-
-        internal class ModUpdateLog
-        {
-            public string packageName { get; set; }
-            [JsonIgnore]
-            public System.Version lastVersion { get; set; }
-            [JsonIgnore]
-            public System.Version newVersion { get; set; }
-
-            [JsonPropertyAttribute("lastVersion")]
-            public string _lastVersionString => lastVersion.ToString();
-            [JsonPropertyAttribute("newVersion")]
-            public string _newVersionString => newVersion.ToString();
-
-            public ModUpdateLog(string packageName, System.Version lastVersion, System.Version newVersion)
-            {
-                this.packageName = packageName;
-                this.lastVersion = lastVersion;
-                this.newVersion = newVersion;
-            }
-        }
-    }
-
-    public partial class Package
-    {
-        #region Properties
-
-        [J("date_created")] public DateTimeOffset DateCreated { get; set; }
-
-        [J("date_updated")] public DateTimeOffset DateUpdated { get; set; }
-
-        [J("full_name")] public string FullName { get; set; }
-
-        [J("is_deprecated")] public bool IsDeprecated { get; set; }
-
-        [J("is_pinned")] public bool IsPinned { get; set; }
-
-        [J("name")] public string Name { get; set; }
-
-        [J("owner")] public string Owner { get; set; }
-
-        [J("package_url")] public Uri PackageUrl { get; set; }
-
-        [J("rating_score")] public long RatingScore { get; set; }
-
-        [J("uuid4")] public Guid Uuid4 { get; set; }
-
-        [J("versions")] public Version[] Versions { get; set; }
-
-        #endregion Properties
-    }
-
-    public partial class Package
-    {
-        #region Methods
-
-        public static Package[] FromJson(string json) => JsonConvert.DeserializeObject<Package[]>(json, Converter.Settings);
-
-        #endregion Methods
-    }
-
-    public partial class Version
-    {
-        #region Properties
-
-        [J("date_created")] public DateTimeOffset DateCreated { get; set; }
-
-        [J("dependencies")] public string[] Dependencies { get; set; }
-
-        [J("description")] public string Description { get; set; }
-
-        [J("downloads")] public long Downloads { get; set; }
-
-        [J("download_url")] public Uri DownloadUrl { get; set; }
-
-        [J("full_name")] public string FullName { get; set; }
-
-        [J("icon")] public Uri Icon { get; set; }
-
-        [J("is_active")] public bool IsActive { get; set; }
-
-        [J("name")] public string Name { get; set; }
-
-        [J("uuid4")] public Guid Uuid4 { get; set; }
-
-        [J("version_number")] public System.Version VersionNumber { get; set; }
-
-        [J("website_url")] public string WebsiteUrl { get; set; }
-
-        #endregion Properties
-    }
-
-    internal static class Converter
-    {
-        #region Fields
-
-        public static readonly JsonSerializerSettings Settings = new JsonSerializerSettings
-        {
-            MetadataPropertyHandling = MetadataPropertyHandling.Ignore,
-            DateParseHandling = DateParseHandling.None
-        };
-
-        #endregion Fields
     }
 }

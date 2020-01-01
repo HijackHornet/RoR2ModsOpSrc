@@ -363,3 +363,4 @@ SillyMemeSounds/wwise/SFX/
 HjUpdaterAPI/Dotfuscator.xml
 
 *.psd
+*.csproj
