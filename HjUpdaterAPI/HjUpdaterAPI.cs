@@ -208,21 +208,18 @@
                         }
                         else
                         {
-                            Debug.LogWarning(LOG + "An update for " + modUpdateRequest.packageName + " is available. Current version(" + modUpdateRequest.currentVersion.ToString() + "). Newest version (" + pk.Versions[0].VersionNumber.ToString() + ")."
-                           + System.Environment.NewLine + "However, the newest version uses a different dependency version. This mod specifie not to update automaticly in that case and to deactivate the mod at the next game start. Please go to " + pk.PackageUrl + " and update manually.");
+                            Debug.LogWarning($"{LOG}An update for {modUpdateRequest.packageName} is available. Current version({modUpdateRequest.currentVersion}). Newest version ({pk.Versions[0].VersionNumber}).{System.Environment.NewLine}However, the newest version uses a different dependency version. This mod specifie not to update automaticly in that case and to deactivate the mod at the next game start. Please go to {pk.PackageUrl} and update manually.");
 
                             DeactivateMod(modUpdateRequest);
                         }
                     }
                     else if (modUpdateRequest.flag.Equals(Flag.WarnOnly))
                     {
-                        Debug.LogWarning(LOG + "An update for " + modUpdateRequest.packageName + " is available. Current version(" + modUpdateRequest.currentVersion.ToString() + "). Newest version (" + pk.Versions[0].VersionNumber.ToString() + ")."
-                            + System.Environment.NewLine + "This mod specifie not to update automaticly. Please go to " + pk.PackageUrl + " and update manually.");
+                        Debug.LogWarning($"{LOG}An update for {modUpdateRequest.packageName} is available. Current version({modUpdateRequest.currentVersion}. Newest version ({pk.Versions[0].VersionNumber}.{Environment.NewLine}This mod specifie not to update automaticly. Please go to {pk.PackageUrl} and update manually.");
                     }
                     else if (modUpdateRequest.flag.Equals(Flag.WarnAndDeactivate))
                     {
-                        Debug.LogWarning(LOG + "An update for " + modUpdateRequest.packageName + " is available. Current version(" + modUpdateRequest.currentVersion.ToString() + "). Newest version (" + pk.Versions[0].VersionNumber.ToString() + ")."
-                            + System.Environment.NewLine + "This mod specifie to deactivate the mod when you will close the game. Please go to " + pk.PackageUrl + " and reinstall manually.");
+                        Debug.LogWarning($"{LOG}An update for {modUpdateRequest.packageName} is available. Current version({modUpdateRequest.currentVersion}. Newest version ({pk.Versions[0].VersionNumber}.{System.Environment.NewLine}This mod specifie to deactivate the mod when you will close the game. Please go to {pk.PackageUrl} and reinstall manually.");
                         DeactivateMod(modUpdateRequest);
                     }
                 }
