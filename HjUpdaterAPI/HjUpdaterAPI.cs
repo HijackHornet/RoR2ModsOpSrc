@@ -230,53 +230,28 @@
 
         private static Flag ReturnFlagAccordingToConfig(Flag flag)
         {
-            if (flag.Equals(Flag.UpdateAlways))
+            switch (flag)
             {
-                if (ConfigDeactivateUpdateAlways.Value)
-                {
+                case Flag.UpdateAlways when ConfigDeactivateUpdateAlways.Value:
                     return Flag.WarnOnly;
-                }
-                else
-                {
+                case Flag.UpdateAlways:
                     return flag;
-                }
-            }
-            else if (flag.Equals(Flag.UpdateIfSameDependencyOnlyElseWarnOnly))
-            {
-                if (ConfigDeactivateUpdateIfSameDependencies.Value)
-                {
+                case Flag.UpdateIfSameDependencyOnlyElseWarnOnly when ConfigDeactivateUpdateIfSameDependencies.Value:
                     return Flag.WarnOnly;
-                }
-                else
-                {
+                case Flag.UpdateIfSameDependencyOnlyElseWarnOnly:
                     return flag;
-                }
-            }
-            else if (flag.Equals(Flag.UpdateIfSameDependencyOnlyElseWarnAndDeactivate))
-            {
-                if (ConfigDeactivateUpdateIfSameDependenciesElseDeactivate.Value)
-                {
+                case Flag.UpdateIfSameDependencyOnlyElseWarnAndDeactivate when ConfigDeactivateUpdateIfSameDependenciesElseDeactivate.Value:
                     return Flag.WarnOnly;
-                }
-                else
-                {
+                case Flag.UpdateIfSameDependencyOnlyElseWarnAndDeactivate:
                     return flag;
-                }
-            }
-            else if (flag.Equals(Flag.WarnAndDeactivate))
-            {
-                if (ConfigDeactivateDeactivateonUpdate.Value)
-                {
+                case Flag.WarnAndDeactivate when ConfigDeactivateDeactivateonUpdate.Value:
                     return Flag.WarnOnly;
-                }
-                else
-                {
+                case Flag.WarnAndDeactivate:
                     return flag;
-                }
-            }
-            else
-            {
-                return flag;
+                case Flag.WarnOnly:
+                    return flag;
+                default:
+                    return flag;
             }
         }
 
