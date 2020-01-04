@@ -270,8 +270,7 @@
                 try
                 {
                     DirectoryInfo backupFolder = Directory.CreateDirectory(Path.Combine(workingDirectory, BACKUPFOLDER,
-                        modUpdateRequest.packageName + '-' + modUpdateRequest.currentVersion.ToString()
-                        + "-" + DateTime.Now.Day + "." + DateTime.Now.Month + "." + DateTime.Now.Year + "." + DateTime.Now.Hour + "." + DateTime.Now.Minute + "." + DateTime.Now.Second));
+                        $"{modUpdateRequest.packageName}-{modUpdateRequest.currentVersion}-{ DateTime.Now.Day}.{DateTime.Now.Month}.{DateTime.Now.Year}.{DateTime.Now.Hour}.{DateTime.Now.Minute}.{DateTime.Now.Second}"));
 
                     string path = Directory.GetParent(modUpdateRequest.currentDllFileLocation).FullName;
                     Debug.Log(modUpdateRequest.currentDllFileLocation);
