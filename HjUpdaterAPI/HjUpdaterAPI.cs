@@ -44,6 +44,13 @@
             WarnAndDeactivate
         };
 
+        private enum DeactivateModFlag
+        {
+            Error,
+            Updated,
+            LateUpdate
+        }
+
         public static ConfigEntry<bool> ConfigDeactivateDeactivateonUpdate { get; set; }
         public static ConfigEntry<bool> ConfigDeactivateThis { get; set; }
         public static ConfigEntry<bool> ConfigDeactivateUpdateAlways { get; set; }
@@ -262,7 +269,7 @@
             }
         }
 
-        private byte DeactivateMod(ModUpdateRequest modUpdateRequest)
+        private DeactivateModFlag DeactivateMod(ModUpdateRequest modUpdateRequest)
         {
             if (modUpdateRequest.modUseRuntimeRessourceLoading)
             {
@@ -270,7 +277,7 @@
                  remove the flag so that we we use the perform update on the second queue at game closure, it doesnt block here again*/
                 modUpdateRequest.modUseRuntimeRessourceLoading = false;
                 modRegisteredForLateUpdateQueue.Enqueue(modUpdateRequest);
-                return 2;
+                return DeactivateModFlag.LateUpdate;
             }
             else
             {
@@ -295,13 +302,13 @@
                         }
                     }
                     Debug.Log(LOG + modUpdateRequest.packageName + " has been updated to the latest version.");
-                    return 1;
+                    return DeactivateModFlag.Updated;
                 }
                 catch (Exception e)
                 {
                     Debug.LogError(LOG + "An error occured during the deactivation process of the following mod : " + modUpdateRequest.packageName + '-' + modUpdateRequest.currentVersion.ToString()
                         + System.Environment.NewLine + "Details : " + e);
-                    return 0;
+                    return DeactivateModFlag.Error;
                 }
             }
         }
@@ -355,13 +362,13 @@
 
         internal void PerformUpdate(ModUpdateRequest modUpdateRequest)
         {
-            byte a = DeactivateMod(modUpdateRequest);
+            DeactivateModFlag a = DeactivateMod(modUpdateRequest);
             //Backup and deploy
-            if (a == 1)
+            if (a == DeactivateModFlag.Updated)
             {
                 DeployModUpdate(modUpdateRequest, Path.Combine(Path.GetTempPath(), modUpdateRequest.packageName + ".zip"));
             }
-            else if (a == 2)
+            else if (a == DeactivateModFlag.LateUpdate)
             {
                 Debug.Log(LOG + "This mod use some files on runtime. This means that the mod will be updated automaticly when you will exit the game.");
             }
