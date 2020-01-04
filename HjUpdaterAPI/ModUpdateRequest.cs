@@ -1,8 +1,8 @@
-﻿using System.Collections.Generic;
-using static Hj.HjUpdaterAPI;
-
-namespace HjUpdaterAPI
+﻿namespace Hj
 {
+    using System.Collections.Generic;
+    using static Hj.HjUpdaterAPI;
+
     internal class ModUpdateRequest
     {
         #region Fields
