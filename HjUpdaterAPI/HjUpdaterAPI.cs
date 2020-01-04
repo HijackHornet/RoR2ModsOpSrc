@@ -342,7 +342,7 @@
 
         private IEnumerator StartPerformUpdate(ModUpdateRequest modUpdateRequest, Package pk)
         {
-            Debug.Log(LOG + "An update for " + modUpdateRequest.packageName + " is available. Current version(" + modUpdateRequest.currentVersion.ToString() + "). Newest version (" + pk.Versions[0].VersionNumber.ToString() + ").");
+            Debug.Log($"{LOG}An update for {modUpdateRequest.packageName} is available. Current version({modUpdateRequest.currentVersion}). Newest version ({pk.Versions[0].VersionNumber}).");
             yield return ThunderAPI.DownloadUpdate(modUpdateRequest, pk, PerformUpdate);
         }
 
