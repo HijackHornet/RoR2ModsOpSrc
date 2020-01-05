@@ -46,6 +46,13 @@
             WarnAndDeactivate
         };
 
+        private enum DeactivateModFlag
+        {
+            Error,
+            Updated,
+            LateUpdate
+        }
+
         public static ConfigEntry<bool> ConfigDeactivateDeactivateonUpdate { get; set; }
         public static ConfigEntry<bool> ConfigDeactivateThis { get; set; }
         public static ConfigEntry<bool> ConfigDeactivateUpdateAlways { get; set; }
@@ -200,21 +207,18 @@
                         }
                         else
                         {
-                            Debug.LogWarning(LOG + "An update for " + modUpdateRequest.packageName + " is available. Current version(" + modUpdateRequest.currentVersion.ToString() + "). Newest version (" + pk.Versions[0].VersionNumber.ToString() + ")."
-                           + System.Environment.NewLine + "However, the newest version uses a different dependency version. This mod specifie not to update automaticly in that case and to deactivate the mod at the next game start. Please go to " + pk.PackageUrl + " and update manually.");
+                            Debug.LogWarning($"{LOG}An update for {modUpdateRequest.packageName} is available. Current version({modUpdateRequest.currentVersion}). Newest version ({pk.Versions[0].VersionNumber}).{System.Environment.NewLine}However, the newest version uses a different dependency version. This mod specifie not to update automaticly in that case and to deactivate the mod at the next game start. Please go to {pk.PackageUrl} and update manually.");
 
                             DeactivateMod(modUpdateRequest);
                         }
                     }
                     else if (modUpdateRequest.flag.Equals(Flag.WarnOnly))
                     {
-                        Debug.LogWarning(LOG + "An update for " + modUpdateRequest.packageName + " is available. Current version(" + modUpdateRequest.currentVersion.ToString() + "). Newest version (" + pk.Versions[0].VersionNumber.ToString() + ")."
-                            + System.Environment.NewLine + "This mod specifie not to update automaticly. Please go to " + pk.PackageUrl + " and update manually.");
+                        Debug.LogWarning($"{LOG}An update for {modUpdateRequest.packageName} is available. Current version({modUpdateRequest.currentVersion}. Newest version ({pk.Versions[0].VersionNumber}.{Environment.NewLine}This mod specifie not to update automaticly. Please go to {pk.PackageUrl} and update manually.");
                     }
                     else if (modUpdateRequest.flag.Equals(Flag.WarnAndDeactivate))
                     {
-                        Debug.LogWarning(LOG + "An update for " + modUpdateRequest.packageName + " is available. Current version(" + modUpdateRequest.currentVersion.ToString() + "). Newest version (" + pk.Versions[0].VersionNumber.ToString() + ")."
-                            + System.Environment.NewLine + "This mod specifie to deactivate the mod when you will close the game. Please go to " + pk.PackageUrl + " and reinstall manually.");
+                        Debug.LogWarning($"{LOG}An update for {modUpdateRequest.packageName} is available. Current version({modUpdateRequest.currentVersion}. Newest version ({pk.Versions[0].VersionNumber}.{System.Environment.NewLine}This mod specifie to deactivate the mod when you will close the game. Please go to {pk.PackageUrl} and reinstall manually.");
                         DeactivateMod(modUpdateRequest);
                     }
                 }
@@ -236,57 +240,32 @@
 
         private static Flag ReturnFlagAccordingToConfig(Flag flag)
         {
-            if (flag.Equals(Flag.UpdateAlways))
+            switch (flag)
             {
-                if (ConfigDeactivateUpdateAlways.Value)
-                {
+                case Flag.UpdateAlways when ConfigDeactivateUpdateAlways.Value:
                     return Flag.WarnOnly;
-                }
-                else
-                {
+                case Flag.UpdateAlways:
                     return flag;
-                }
-            }
-            else if (flag.Equals(Flag.UpdateIfSameDependencyOnlyElseWarnOnly))
-            {
-                if (ConfigDeactivateUpdateIfSameDependencies.Value)
-                {
+                case Flag.UpdateIfSameDependencyOnlyElseWarnOnly when ConfigDeactivateUpdateIfSameDependencies.Value:
                     return Flag.WarnOnly;
-                }
-                else
-                {
+                case Flag.UpdateIfSameDependencyOnlyElseWarnOnly:
                     return flag;
-                }
-            }
-            else if (flag.Equals(Flag.UpdateIfSameDependencyOnlyElseWarnAndDeactivate))
-            {
-                if (ConfigDeactivateUpdateIfSameDependenciesElseDeactivate.Value)
-                {
+                case Flag.UpdateIfSameDependencyOnlyElseWarnAndDeactivate when ConfigDeactivateUpdateIfSameDependenciesElseDeactivate.Value:
                     return Flag.WarnOnly;
-                }
-                else
-                {
+                case Flag.UpdateIfSameDependencyOnlyElseWarnAndDeactivate:
                     return flag;
-                }
-            }
-            else if (flag.Equals(Flag.WarnAndDeactivate))
-            {
-                if (ConfigDeactivateDeactivateonUpdate.Value)
-                {
+                case Flag.WarnAndDeactivate when ConfigDeactivateDeactivateonUpdate.Value:
                     return Flag.WarnOnly;
-                }
-                else
-                {
+                case Flag.WarnAndDeactivate:
                     return flag;
-                }
-            }
-            else
-            {
-                return flag;
+                case Flag.WarnOnly:
+                    return flag;
+                default:
+                    return flag;
             }
         }
 
-        private byte DeactivateMod(ModUpdateRequest modUpdateRequest)
+        private DeactivateModFlag DeactivateMod(ModUpdateRequest modUpdateRequest)
         {
             if (modUpdateRequest.modUseRuntimeRessourceLoading)
             {
@@ -294,15 +273,14 @@
                  remove the flag so that we we use the perform update on the second queue at game closure, it doesnt block here again*/
                 modUpdateRequest.modUseRuntimeRessourceLoading = false;
                 modRegisteredForLateUpdateQueue.Enqueue(modUpdateRequest);
-                return 2;
+                return DeactivateModFlag.LateUpdate;
             }
             else
             {
                 try
                 {
                     DirectoryInfo backupFolder = Directory.CreateDirectory(Path.Combine(workingDirectory, BACKUPFOLDER,
-                        modUpdateRequest.packageName + '-' + modUpdateRequest.currentVersion.ToString()
-                        + "-" + DateTime.Now.Day + "." + DateTime.Now.Month + "." + DateTime.Now.Year + "." + DateTime.Now.Hour + "." + DateTime.Now.Minute + "." + DateTime.Now.Second));
+                        $"{modUpdateRequest.packageName}-{modUpdateRequest.currentVersion}-{ DateTime.Now.Day}.{DateTime.Now.Month}.{DateTime.Now.Year}.{DateTime.Now.Hour}.{DateTime.Now.Minute}.{DateTime.Now.Second}"));
 
                     string path = Directory.GetParent(modUpdateRequest.currentDllFileLocation).FullName;
                     Debug.Log(modUpdateRequest.currentDllFileLocation);
@@ -320,13 +298,13 @@
                         }
                     }
                     Debug.Log(LOG + modUpdateRequest.packageName + " has been updated to the latest version.");
-                    return 1;
+                    return DeactivateModFlag.Updated;
                 }
                 catch (Exception e)
                 {
                     Debug.LogError(LOG + "An error occured during the deactivation process of the following mod : " + modUpdateRequest.packageName + '-' + modUpdateRequest.currentVersion.ToString()
                         + System.Environment.NewLine + "Details : " + e);
-                    return 0;
+                    return DeactivateModFlag.Error;
                 }
             }
         }
@@ -396,19 +374,19 @@
         }
             private IEnumerator StartPerformUpdate(ModUpdateRequest modUpdateRequest, Package pk)
         {
-            Debug.Log(LOG + "An update for " + modUpdateRequest.packageName + " is available. Current version(" + modUpdateRequest.currentVersion.ToString() + "). Newest version (" + pk.Versions[0].VersionNumber.ToString() + ").");
+            Debug.Log($"{LOG}An update for {modUpdateRequest.packageName} is available. Current version({modUpdateRequest.currentVersion}). Newest version ({pk.Versions[0].VersionNumber}).");
             yield return ThunderAPI.DownloadUpdate(modUpdateRequest, pk, PerformUpdate);
         }
 
         internal void PerformUpdate(ModUpdateRequest modUpdateRequest)
         {
-            byte a = DeactivateMod(modUpdateRequest);
+            DeactivateModFlag a = DeactivateMod(modUpdateRequest);
             //Backup and deploy
-            if (a == 1)
+            if (a == DeactivateModFlag.Updated)
             {
                 DeployModUpdate(modUpdateRequest, Path.Combine(Path.GetTempPath(), modUpdateRequest.packageName + ".zip"));
             }
-            else if (a == 2)
+            else if (a == DeactivateModFlag.LateUpdate)
             {
                 Debug.Log(LOG + "This mod use some files on runtime. This means that the mod will be updated automaticly when you will exit the game.");
             }
