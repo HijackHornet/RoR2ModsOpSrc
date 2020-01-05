@@ -2,6 +2,7 @@
 {
     using BepInEx;
     using BepInEx.Configuration;
+    using global::HjUpdaterAPI;
     using System;
     using System.Collections;
     using System.Collections.Generic;
@@ -11,6 +12,7 @@
     using System.Linq;
     using System.Reflection;
     using System.Runtime.CompilerServices;
+    using UnityEngine;
     using Debug = UnityEngine.Debug;
 
     [BepInPlugin(GUID, NAME, VERSION)]
@@ -103,13 +105,15 @@
                 "If true, all mods flaged as 'warn and deactivate on update found' will be replaced by warn only"
             );
 
+            //setting default styles
+            Styles.SetStyles();
+
             List<string> filesPath = new List<string>();
             filesPath.Add("Newtonsoft.Json.dll");
 
             Register("HjUpdaterAPI", Flag.UpdateAlways, filesPath);
             PerformAwake();
         }
-
         internal void Start()
         {
             if ((modRegisteredQueue.Count > 0) && this.enabled && !ConfigDeactivateThis.Value)
@@ -118,6 +122,7 @@
                 Debug.Log(LOG + "Checking updates for " + modRegisteredQueue.Count + " mod(s)...");
                 StartCoroutine(ThunderAPI.GetPackages(LaunchQueueProcess));
             }
+            Styles.SetStyles();
         }
 
         private void OnDestroy()
@@ -156,6 +161,7 @@
                 yield return ProcessQueueElement(modRegisteredQueue.Dequeue());
             }
             Debug.Log(LOG + "All registered mod have been checked for newer versions. This update process is now complete.");
+            Styles._isMenuOpen = false;
             ModUpdateLog.writeModUpdateLogFile();
         }
 
@@ -340,7 +346,17 @@
                 Directory.CreateDirectory(Path.Combine(workingDirectory, BACKUPFOLDER));
             }
         }
+        private void OnGUI()
+        {
+            #region GenerateMenus
 
+            Styles.mainRect = GUI.Window(0, Styles.mainRect, new GUI.WindowFunction(SetMainBG), "", new GUIStyle());
+            if (Styles._isMenuOpen)
+            {
+                DisplayUpdateMessage.DrawUI(Styles.mainRect.x, Styles.mainRect.y, Styles.widthSize, Styles.MainMulY, Styles.MainBgStyle, Styles.OnStyle, Styles.OffStyle, Styles.BtnStyle);
+            }
+            #endregion
+        }
         private void PerformLateUpdates()
         {
             while (modRegisteredForLateUpdateQueue.Count > 0)
@@ -351,7 +367,19 @@
             }
         }
 
-        private IEnumerator StartPerformUpdate(ModUpdateRequest modUpdateRequest, Package pk)
+        public static void SetMainBG(int windowID)
+        {
+            GUI.Box(new Rect(0f, 0f, Styles.widthSize + 10, 50f + 45 * Styles.MainMulY), "", Styles.CornerStyle);
+            if (Event.current.type == EventType.MouseDrag)
+            {
+                Styles.delay += Time.deltaTime;
+                if (Styles.delay > 0.3f)
+                {
+                    Styles._ifDragged = true;
+                }
+            }
+        }
+            private IEnumerator StartPerformUpdate(ModUpdateRequest modUpdateRequest, Package pk)
         {
             Debug.Log($"{LOG}An update for {modUpdateRequest.packageName} is available. Current version({modUpdateRequest.currentVersion}). Newest version ({pk.Versions[0].VersionNumber}).");
             yield return ThunderAPI.DownloadUpdate(modUpdateRequest, pk, PerformUpdate);
