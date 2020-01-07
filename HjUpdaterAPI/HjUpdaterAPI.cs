@@ -123,6 +123,13 @@
             ModUpdateLog.writeModUpdateLogFile();
         }
 
+        /// <summary>
+        /// Register a mod for updating
+        /// </summary>
+        /// <param name="packageName">The fullName of the mod (owner-name) on thunderstore, name only is accepted but not desired</param>
+        /// <param name="flag">What behavior should happen when a new version is there</param>
+        /// <param name="otherFilesLocationRelativeToTheDll">Any file other than the main dll that the mod depends on, relative path</param>
+        /// <param name="modUseRuntimeRessourceLoading">set to true if there are embedded files for minimum breaking</param>
         [MethodImpl(MethodImplOptions.NoInlining)]
         public static void Register(string packageName, Flag flag = Flag.UpdateIfSameDependencyOnlyElseWarnOnly, List<string> otherFilesLocationRelativeToTheDll = null, bool modUseRuntimeRessourceLoading = false)
         {
