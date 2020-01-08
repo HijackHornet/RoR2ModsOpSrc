@@ -1,8 +1,8 @@
 {
     "name": "HjUpdaterAPI",
-    "version_number": "1.4.0",
+    "version_number": "1.4.1",
     "website_url": "https://github.com/HijackHornet/RoR2ModsOpSrc",
-    "description": "A robust and flexible API for checking mod versions and updating automatically.",
+    "description": "A robust and flexible API for checking mod versions and/or updating automatically.",
     "dependencies": [
 		"bbepis-BepInExPack-3.0.0"
     ]

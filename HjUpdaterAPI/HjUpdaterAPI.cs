@@ -19,7 +19,7 @@
         public const string
             NAME = "HjUpdaterAPI",
             GUID = "com.hijackhornet." + NAME,
-            VERSION = "1.4.0";
+            VERSION = "1.4.1";
 
         #region Constants
 
