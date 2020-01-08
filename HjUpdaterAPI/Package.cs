@@ -77,6 +77,14 @@
             {
                 for (int i = 0; i < packages.Length; i++)
                 {
+                    if (packages[i].FullName == modName)
+                    {
+                        return packages[i];
+                    }
+                }
+
+                for (int i = 0; i < packages.Length; i++)
+                {
                     if (packages[i].Name == modName)
                     {
                         return packages[i];
